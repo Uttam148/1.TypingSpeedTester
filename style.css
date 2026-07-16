@@ -1,0 +1,7 @@
+body{font-family:Arial,sans-serif;background:#111827;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+.container{width:min(800px,90%);background:#1f2937;padding:24px;border-radius:12px}
+.stats{display:flex;gap:24px;margin:16px 0}
+.text{font-size:22px;line-height:1.8;background:#374151;padding:16px;border-radius:8px;min-height:120px}
+.correct{color:#22c55e}.wrong{color:#ef4444}.current{text-decoration:underline}
+input{width:100%;padding:12px;margin-top:16px;font-size:18px;border-radius:8px;border:none}
+button{margin-top:16px;padding:10px 18px;font-size:16px}
