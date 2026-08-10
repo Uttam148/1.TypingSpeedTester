@@ -5,6 +5,7 @@ const timeEl=document.getElementById('time');
 const wpmEl=document.getElementById('wpm');
 const accEl=document.getElementById('accuracy');
 const restart=document.getElementById('restart');
+let duration =60;
 let timer=duration,started=false,interval;
 function render(){
  const val=input.value;
@@ -24,7 +25,7 @@ function stats(){
  const typed=input.value.length;
  let correct=0;
  for(let i=0;i<typed;i++) if(input.value[i]===paragraph[i]) correct++;
- const mins=(60-timer)/60||1/60;
+ const mins=(duration-timer)/60||1/60;
  wpmEl.textContent=Math.round((correct/5)/mins);
  accEl.textContent=typed?Math.round(correct/typed*100):100;
 }
@@ -44,8 +45,8 @@ function start(){
 input.addEventListener('input',()=>{start();render();stats();});
 restart.addEventListener('click',()=>{
  clearInterval(interval);
- timer=60;started=false;
- timeEl.textContent=60;
+ timer=duration;started=false;
+ timeEl.textContent=duration;
  input.disabled=false;
  input.value='';
  wpmEl.textContent='0';
@@ -55,7 +56,7 @@ restart.addEventListener('click',()=>{
 });
 render();
 
-// sets durations multiple
+//1. sets durations multiple
 function setDuration(seconds) {
     if (started) return;
 
