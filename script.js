@@ -5,7 +5,7 @@ const timeEl=document.getElementById('time');
 const wpmEl=document.getElementById('wpm');
 const accEl=document.getElementById('accuracy');
 const restart=document.getElementById('restart');
-let timer=60,started=false,interval;
+let timer=duration,started=false,interval;
 function render(){
  const val=input.value;
  text.innerHTML='';
@@ -54,3 +54,13 @@ restart.addEventListener('click',()=>{
  input.focus();
 });
 render();
+
+// sets durations multiple
+function setDuration(seconds) {
+    if (started) return;
+
+    duration = seconds;
+    timer = seconds;
+
+    timeEl.textContent = timer;
+}
