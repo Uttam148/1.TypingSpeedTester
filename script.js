@@ -4,6 +4,7 @@ const timeEl = document.getElementById('time');
 const wpmEl = document.getElementById('wpm');
 const accEl = document.getElementById('accuracy');
 const restart = document.getElementById('restart');
+const container = document.querySelector('.container');
 
 let stories = [];
 let paragraph = '';
@@ -13,7 +14,7 @@ let timer = duration;
 let started = false;
 let interval;
 
-// Number of words needed for each test duration
+// Words required for each duration
 const wordTargets = {
     15: 200,
     30: 400,
@@ -22,7 +23,10 @@ const wordTargets = {
 };
 
 
-// Load the ROCStories dataset
+// ----------------------------------
+// LOAD STORIES
+// ----------------------------------
+
 async function loadStories() {
     try {
         const response = await fetch('passages.json');
@@ -39,12 +43,16 @@ async function loadStories() {
 
     } catch (error) {
         console.error('Error loading stories:', error);
+
         text.textContent = 'Could not load typing passages.';
     }
 }
 
 
-// Create a random continuous passage
+// ----------------------------------
+// CREATE RANDOM PASSAGE
+// ----------------------------------
+
 function createPassage() {
 
     if (stories.length === 0) {
@@ -58,11 +66,15 @@ function createPassage() {
 
     let wordCount = 0;
 
-    while (wordCount < targetWords && usedIndexes.size < stories.length) {
+    while (
+        wordCount < targetWords &&
+        usedIndexes.size < stories.length
+    ) {
 
-        const randomIndex = Math.floor(Math.random() * stories.length);
+        const randomIndex = Math.floor(
+            Math.random() * stories.length
+        );
 
-        // Avoid using the same story twice
         if (usedIndexes.has(randomIndex)) {
             continue;
         }
@@ -76,14 +88,17 @@ function createPassage() {
         wordCount += story.split(/\s+/).length;
     }
 
-    // Join stories continuously
+    // One continuous passage
     paragraph = selectedStories.join(' ');
 
     render();
 }
 
 
-// Display the passage with character highlighting
+// ----------------------------------
+// DISPLAY PASSAGE
+// ----------------------------------
+
 function render() {
 
     const val = input.value;
@@ -114,7 +129,10 @@ function render() {
 }
 
 
-// Calculate WPM and accuracy
+// ----------------------------------
+// CALCULATE STATISTICS
+// ----------------------------------
+
 function stats() {
 
     const typed = input.value.length;
@@ -132,7 +150,9 @@ function stats() {
 
     const minutes = elapsedSeconds / 60 || 1 / 60;
 
-    const wpm = Math.round((correct / 5) / minutes);
+    const wpm = Math.round(
+        (correct / 5) / minutes
+    );
 
     const accuracy = typed
         ? Math.round((correct / typed) * 100)
@@ -140,10 +160,18 @@ function stats() {
 
     wpmEl.textContent = wpm;
     accEl.textContent = accuracy;
+
+    return {
+        wpm,
+        accuracy
+    };
 }
 
 
-// Start timer
+// ----------------------------------
+// START TEST
+// ----------------------------------
+
 function start() {
 
     if (started) {
@@ -165,13 +193,64 @@ function start() {
             clearInterval(interval);
 
             input.disabled = true;
+
+            showResults();
         }
 
     }, 1000);
 }
 
 
-// User typing
+// ----------------------------------
+// SHOW RESULTS
+// ----------------------------------
+
+function showResults() {
+
+    const finalStats = stats();
+
+    container.innerHTML = `
+        <div class="results-screen">
+
+            <h1>Test Complete!</h1>
+
+            <div class="results-card">
+
+                <div class="result-item">
+                    <span>WPM</span>
+                    <strong>${finalStats.wpm}</strong>
+                </div>
+
+                <div class="result-item">
+                    <span>Accuracy</span>
+                    <strong>${finalStats.accuracy}%</strong>
+                </div>
+
+            </div>
+
+            <button id="resultRestart">
+                Restart Test
+            </button>
+
+        </div>
+    `;
+
+    const resultRestart =
+        document.getElementById('resultRestart');
+
+    resultRestart.addEventListener('click', () => {
+
+        // Reload the page and return to the start page
+        window.location.reload();
+
+    });
+}
+
+
+// ----------------------------------
+// USER TYPING
+// ----------------------------------
+
 input.addEventListener('input', () => {
 
     start();
@@ -182,7 +261,10 @@ input.addEventListener('input', () => {
 });
 
 
-// Restart the test
+// ----------------------------------
+// ORIGINAL RESTART BUTTON
+// ----------------------------------
+
 restart.addEventListener('click', () => {
 
     clearInterval(interval);
@@ -206,7 +288,10 @@ restart.addEventListener('click', () => {
 });
 
 
-// Change test duration
+// ----------------------------------
+// CHANGE DURATION
+// ----------------------------------
+
 function setDuration(seconds) {
 
     if (started) {
@@ -223,5 +308,8 @@ function setDuration(seconds) {
 }
 
 
-// Load dataset when the page opens
+// ----------------------------------
+// LOAD DATASET
+// ----------------------------------
+
 loadStories();
