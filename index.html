@@ -1,33 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Typing Test MVP</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="container">
-<h1>Typing Test</h1>
-<div class="stats">
-<span>Time: <b id="time">60</b>s</span>
-<span>WPM: <b id="wpm">0</b></span>
-<span>Accuracy: <b id="accuracy">100</b>%</span>
-</div>
-<div class="duration">
-    <button onclick="setDuration(15)">15s</button>
-    <button onclick="setDuration(30)">30s</button>
-    <button onclick="setDuration(60)">60s</button>
-    <button onclick="setDuration(120)">120s</button>
-</div>
 
-<div id="text" class="text"></div>
-<div id="text" class="text"></div>
-<input id="input" type="text" autocomplete="off" placeholder="Start typing...">
-<div class="buttons">
-<button id="restart">Restart</button>
-</div>
-</div>
-<script src="script.js"></script>
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Typing Speed Tester</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Typing Test</h1>
+
+        <!-- Test statistics -->
+        <div class="stats">
+
+            <div>
+                <strong>Time</strong>
+                <span id="time">60</span>s
+            </div>
+
+            <div>
+                <strong>WPM</strong>
+                <span id="wpm">0</span>
+            </div>
+
+            <div>
+                <strong>Accuracy</strong>
+                <span id="accuracy">100</span>%
+            </div>
+
+        </div>
+
+
+        <!-- Test duration -->
+        <div class="duration">
+
+            <button onclick="setDuration(15)">
+                15s
+            </button>
+
+            <button onclick="setDuration(30)">
+                30s
+            </button>
+
+            <button onclick="setDuration(60)">
+                60s
+            </button>
+
+            <button onclick="setDuration(120)">
+                120s
+            </button>
+
+        </div>
+
+
+        <!-- Typing passage -->
+        <div
+            class="text"
+            id="text"
+        ></div>
+
+
+        <!-- User typing input -->
+        <input
+            type="text"
+            id="input"
+            placeholder="Start typing..."
+            autocomplete="off"
+            spellcheck="false"
+        >
+
+
+        <!-- Restart current test -->
+        <button id="restart">
+            Restart
+        </button>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
 </body>
+
 </html>
