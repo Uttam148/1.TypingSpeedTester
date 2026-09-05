@@ -12,9 +12,15 @@ let paragraph = '';
 let duration = 60;
 let timer = duration;
 let started = false;
+let finished = false;
 let interval;
 
 let typedText = '';
+
+
+// ----------------------------------
+// WORD TARGETS
+// ----------------------------------
 
 const wordTargets = {
     15: 200,
@@ -29,9 +35,7 @@ const wordTargets = {
 // ----------------------------------
 
 async function loadStories() {
-
     try {
-
         const response = await fetch('passages.json');
 
         if (!response.ok) {
@@ -40,13 +44,13 @@ async function loadStories() {
 
         stories = await response.json();
 
+        console.log('Stories loaded:', stories.length);
+
         createPassage();
         focusInput();
 
     } catch (error) {
-
-        console.error(error);
-
+        console.error('Error loading stories:', error);
         text.textContent = 'Could not load typing passages.';
     }
 }
@@ -57,7 +61,6 @@ async function loadStories() {
 // ----------------------------------
 
 function createPassage() {
-
     if (stories.length === 0) {
         return;
     }
@@ -73,7 +76,6 @@ function createPassage() {
         wordCount < targetWords &&
         usedIndexes.size < stories.length
     ) {
-
         const randomIndex = Math.floor(
             Math.random() * stories.length
         );
@@ -104,25 +106,20 @@ function createPassage() {
 // ----------------------------------
 
 function render() {
-
     text.innerHTML = '';
 
     for (let i = 0; i < paragraph.length; i++) {
-
         const span = document.createElement('span');
 
         span.textContent = paragraph[i];
 
         if (i < typedText.length) {
-
             if (typedText[i] === paragraph[i]) {
                 span.className = 'correct';
             } else {
                 span.className = 'wrong';
             }
-
-        } else if (i === typedText.length) {
-
+        } else if (i === typedText.length && !finished) {
             span.className = 'current';
         }
 
@@ -132,17 +129,15 @@ function render() {
 
 
 // ----------------------------------
-// CALCULATE STATISTICS
+// CALCULATE STATS
 // ----------------------------------
 
 function stats() {
-
     const typed = typedText.length;
 
     let correct = 0;
 
     for (let i = 0; i < typed; i++) {
-
         if (typedText[i] === paragraph[i]) {
             correct++;
         }
@@ -175,15 +170,13 @@ function stats() {
 // ----------------------------------
 
 function start() {
-
-    if (started) {
+    if (started || finished) {
         return;
     }
 
     started = true;
 
     interval = setInterval(() => {
-
         timer--;
 
         timeEl.textContent = timer;
@@ -191,12 +184,7 @@ function start() {
         stats();
 
         if (timer <= 0) {
-
-            clearInterval(interval);
-
-            input.disabled = true;
-
-            showResults();
+            finishTest();
         }
 
     }, 1000);
@@ -208,8 +196,7 @@ function start() {
 // ----------------------------------
 
 input.addEventListener('input', () => {
-
-    if (timer <= 0) {
+    if (finished) {
         return;
     }
 
@@ -222,46 +209,43 @@ input.addEventListener('input', () => {
     typedText = newValue;
 
     render();
-
     stats();
 });
 
 
 // ----------------------------------
-// KEYBOARD CONTROLS
+// BLOCK COPY / CUT / PASTE
 // ----------------------------------
 
 input.addEventListener('keydown', (event) => {
 
-    if (event.key === 'Enter') {
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        ['c', 'x', 'v', 'a'].includes(
+            event.key.toLowerCase()
+        )
+    ) {
         event.preventDefault();
     }
 
     if (
-        (event.ctrlKey || event.metaKey) &&
-        ['c', 'x', 'v'].includes(event.key.toLowerCase())
+        event.key === 'Enter' ||
+        event.key === 'Tab'
     ) {
         event.preventDefault();
     }
 });
 
 
-// ----------------------------------
-// BLOCK PASTE
-// ----------------------------------
-
 input.addEventListener('paste', (event) => {
     event.preventDefault();
 });
 
 
-// ----------------------------------
-// BLOCK DROP
-// ----------------------------------
-
 input.addEventListener('drop', (event) => {
     event.preventDefault();
 });
+
 
 input.addEventListener('dragover', (event) => {
     event.preventDefault();
@@ -269,89 +253,59 @@ input.addEventListener('dragover', (event) => {
 
 
 // ----------------------------------
-// KEEP INPUT FOCUSED
+// FOCUS INPUT
 // ----------------------------------
 
 function focusInput() {
-    input.focus();
+    if (!finished) {
+        input.focus();
+    }
 }
 
+
+// Click passage to start typing
 text.addEventListener('click', () => {
     focusInput();
 });
 
-container.addEventListener('click', () => {
-    focusInput();
-});
-
 
 // ----------------------------------
-// RESTART TEST
+// FINISH TEST
 // ----------------------------------
 
-restart.addEventListener('click', () => {
-
-    clearInterval(interval);
-
-    timer = duration;
-    started = false;
-
-    typedText = '';
-
-    timeEl.textContent = duration;
-
-    wpmEl.textContent = '0';
-
-    accEl.textContent = '100';
-
-    input.disabled = false;
-
-    createPassage();
-
-    focusInput();
-});
-
-
-// ----------------------------------
-// CHANGE DURATION
-// ----------------------------------
-
-function setDuration(seconds) {
-
-    if (started) {
+function finishTest() {
+    if (finished) {
         return;
     }
 
-    duration = seconds;
+    finished = true;
 
-    timer = seconds;
+    clearInterval(interval);
 
-    timeEl.textContent = timer;
-
-    wpmEl.textContent = '0';
-
-    accEl.textContent = '100';
-
-    createPassage();
-
-    focusInput();
-}
-
-
-// ----------------------------------
-// SHOW RESULTS
-// ----------------------------------
-
-function showResults() {
+    input.disabled = true;
 
     const finalStats = stats();
 
-    // Keep the Restart button visible
-    const results = document.createElement('div');
+    // Hide typing elements
+    text.style.display = 'none';
+    input.style.display = 'none';
 
-    results.className = 'results-screen';
+    // Hide duration buttons
+    const durationButtons =
+        document.querySelector('.duration');
 
-    results.innerHTML = `
+    if (durationButtons) {
+        durationButtons.style.display = 'none';
+    }
+
+    // Create results
+    const resultsScreen =
+        document.createElement('div');
+
+    resultsScreen.className =
+        'results-screen';
+
+    resultsScreen.innerHTML = `
         <h1>Test Complete!</h1>
 
         <div class="results-card">
@@ -369,19 +323,41 @@ function showResults() {
         </div>
     `;
 
-    // Hide the typing elements
-    text.style.display = 'none';
-    input.style.display = 'none';
+    container.appendChild(resultsScreen);
+}
 
-    // Hide duration buttons
-    const durationButtons = document.querySelector('.duration');
 
-    if (durationButtons) {
-        durationButtons.style.display = 'none';
+// ----------------------------------
+// RESTART
+// ----------------------------------
+
+restart.addEventListener('click', () => {
+    window.location.reload();
+});
+
+
+// ----------------------------------
+// CHANGE DURATION
+// ----------------------------------
+
+function setDuration(seconds) {
+    if (started || finished) {
+        return;
     }
 
-    // Add results above the existing Restart button
-    container.appendChild(results);
+    duration = seconds;
+
+    timer = seconds;
+
+    timeEl.textContent = timer;
+
+    wpmEl.textContent = '0';
+
+    accEl.textContent = '100';
+
+    createPassage();
+
+    focusInput();
 }
 
 
