@@ -3,6 +3,7 @@ const input = document.getElementById('input');
 const timeEl = document.getElementById('time');
 const wpmEl = document.getElementById('wpm');
 const accEl = document.getElementById('accuracy');
+const restart = document.getElementById('restart');
 const container = document.querySelector('.container');
 
 let stories = [];
@@ -40,7 +41,6 @@ async function loadStories() {
         stories = await response.json();
 
         createPassage();
-
         focusInput();
 
     } catch (error) {
@@ -53,7 +53,7 @@ async function loadStories() {
 
 
 // ----------------------------------
-// CREATE PASSAGE
+// CREATE RANDOM PASSAGE
 // ----------------------------------
 
 function createPassage() {
@@ -69,7 +69,6 @@ function createPassage() {
 
     let wordCount = 0;
 
-
     while (
         wordCount < targetWords &&
         usedIndexes.size < stories.length
@@ -79,11 +78,9 @@ function createPassage() {
             Math.random() * stories.length
         );
 
-
         if (usedIndexes.has(randomIndex)) {
             continue;
         }
-
 
         usedIndexes.add(randomIndex);
 
@@ -93,7 +90,6 @@ function createPassage() {
 
         wordCount += story.split(/\s+/).length;
     }
-
 
     paragraph = selectedStories.join(' ');
 
@@ -117,7 +113,6 @@ function render() {
 
         span.textContent = paragraph[i];
 
-
         if (i < typedText.length) {
 
             if (typedText[i] === paragraph[i]) {
@@ -131,14 +126,13 @@ function render() {
             span.className = 'current';
         }
 
-
         text.appendChild(span);
     }
 }
 
 
 // ----------------------------------
-// CALCULATE STATS
+// CALCULATE STATISTICS
 // ----------------------------------
 
 function stats() {
@@ -147,7 +141,6 @@ function stats() {
 
     let correct = 0;
 
-
     for (let i = 0; i < typed; i++) {
 
         if (typedText[i] === paragraph[i]) {
@@ -155,26 +148,20 @@ function stats() {
         }
     }
 
-
     const elapsedSeconds = duration - timer;
 
     const minutes = elapsedSeconds / 60 || 1 / 60;
-
 
     const wpm = Math.round(
         (correct / 5) / minutes
     );
 
-
     const accuracy = typed
         ? Math.round((correct / typed) * 100)
         : 100;
 
-
     wpmEl.textContent = wpm;
-
     accEl.textContent = accuracy;
-
 
     return {
         wpm,
@@ -195,7 +182,6 @@ function start() {
 
     started = true;
 
-
     interval = setInterval(() => {
 
         timer--;
@@ -204,10 +190,11 @@ function start() {
 
         stats();
 
-
         if (timer <= 0) {
 
             clearInterval(interval);
+
+            input.disabled = true;
 
             showResults();
         }
@@ -226,18 +213,13 @@ input.addEventListener('input', () => {
         return;
     }
 
-
     const newValue = input.value;
 
-
-    // Start timer when the first character is typed
     if (!started && newValue.length > 0) {
         start();
     }
 
-
     typedText = newValue;
-
 
     render();
 
@@ -246,7 +228,7 @@ input.addEventListener('input', () => {
 
 
 // ----------------------------------
-// BACKSPACE SUPPORT
+// KEYBOARD CONTROLS
 // ----------------------------------
 
 input.addEventListener('keydown', (event) => {
@@ -255,8 +237,6 @@ input.addEventListener('keydown', (event) => {
         event.preventDefault();
     }
 
-
-    // Block Ctrl+C, Ctrl+X and Ctrl+V
     if (
         (event.ctrlKey || event.metaKey) &&
         ['c', 'x', 'v'].includes(event.key.toLowerCase())
@@ -271,7 +251,6 @@ input.addEventListener('keydown', (event) => {
 // ----------------------------------
 
 input.addEventListener('paste', (event) => {
-
     event.preventDefault();
 });
 
@@ -281,12 +260,10 @@ input.addEventListener('paste', (event) => {
 // ----------------------------------
 
 input.addEventListener('drop', (event) => {
-
     event.preventDefault();
 });
 
 input.addEventListener('dragover', (event) => {
-
     event.preventDefault();
 });
 
@@ -296,69 +273,43 @@ input.addEventListener('dragover', (event) => {
 // ----------------------------------
 
 function focusInput() {
-
     input.focus();
 }
 
-
-// Clicking the passage focuses the invisible input
 text.addEventListener('click', () => {
-
     focusInput();
 });
 
-
-// Clicking anywhere in the container focuses typing
 container.addEventListener('click', () => {
-
     focusInput();
 });
 
 
 // ----------------------------------
-// SHOW RESULTS
+// RESTART TEST
 // ----------------------------------
 
-function showResults() {
+restart.addEventListener('click', () => {
 
-    const finalStats = stats();
+    clearInterval(interval);
 
+    timer = duration;
+    started = false;
 
-    container.innerHTML = `
-        <div class="results-screen">
+    typedText = '';
 
-            <h1>Test Complete!</h1>
+    timeEl.textContent = duration;
 
-            <div class="results-card">
+    wpmEl.textContent = '0';
 
-                <div class="result-item">
-                    <span>WPM</span>
-                    <strong>${finalStats.wpm}</strong>
-                </div>
+    accEl.textContent = '100';
 
-                <div class="result-item">
-                    <span>Accuracy</span>
-                    <strong>${finalStats.accuracy}%</strong>
-                </div>
+    input.disabled = false;
 
-            </div>
+    createPassage();
 
-            <button id="resultRestart">
-                Restart Test
-            </button>
-
-        </div>
-    `;
-
-
-    document
-        .getElementById('resultRestart')
-        .addEventListener('click', () => {
-
-            window.location.reload();
-
-        });
-}
+    focusInput();
+});
 
 
 // ----------------------------------
@@ -371,7 +322,6 @@ function setDuration(seconds) {
         return;
     }
 
-
     duration = seconds;
 
     timer = seconds;
@@ -382,10 +332,56 @@ function setDuration(seconds) {
 
     accEl.textContent = '100';
 
-
     createPassage();
 
     focusInput();
+}
+
+
+// ----------------------------------
+// SHOW RESULTS
+// ----------------------------------
+
+function showResults() {
+
+    const finalStats = stats();
+
+    // Keep the Restart button visible
+    const results = document.createElement('div');
+
+    results.className = 'results-screen';
+
+    results.innerHTML = `
+        <h1>Test Complete!</h1>
+
+        <div class="results-card">
+
+            <div class="result-item">
+                <span>WPM</span>
+                <strong>${finalStats.wpm}</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Accuracy</span>
+                <strong>${finalStats.accuracy}%</strong>
+            </div>
+
+        </div>
+    `;
+
+    // Hide the typing elements
+    text.style.display = 'none';
+    input.style.display = 'none';
+
+    // Hide duration buttons
+    const durationButtons = document.querySelector('.duration');
+
+    if (durationButtons) {
+        durationButtons.style.display = 'none';
+    }
+
+    // Add results above the existing Restart button
+    container.appendChild(results);
 }
 
 
