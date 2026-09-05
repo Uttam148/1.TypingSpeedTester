@@ -1,4 +1,5 @@
 const text = document.getElementById('text');
+const input = document.getElementById('input');
 const timeEl = document.getElementById('time');
 const wpmEl = document.getElementById('wpm');
 const accEl = document.getElementById('accuracy');
@@ -13,11 +14,6 @@ let started = false;
 let interval;
 
 let typedText = '';
-
-
-// ----------------------------------
-// WORD TARGETS
-// ----------------------------------
 
 const wordTargets = {
     15: 200,
@@ -43,13 +39,13 @@ async function loadStories() {
 
         stories = await response.json();
 
-        console.log('Stories loaded:', stories.length);
-
         createPassage();
+
+        focusInput();
 
     } catch (error) {
 
-        console.error('Error loading stories:', error);
+        console.error(error);
 
         text.textContent = 'Could not load typing passages.';
     }
@@ -57,7 +53,7 @@ async function loadStories() {
 
 
 // ----------------------------------
-// CREATE RANDOM PASSAGE
+// CREATE PASSAGE
 // ----------------------------------
 
 function createPassage() {
@@ -142,7 +138,7 @@ function render() {
 
 
 // ----------------------------------
-// CALCULATE STATISTICS
+// CALCULATE STATS
 // ----------------------------------
 
 function stats() {
@@ -188,7 +184,7 @@ function stats() {
 
 
 // ----------------------------------
-// START TEST
+// START TIMER
 // ----------------------------------
 
 function start() {
@@ -221,130 +217,101 @@ function start() {
 
 
 // ----------------------------------
-// HANDLE KEYBOARD INPUT
+// HANDLE TYPING
 // ----------------------------------
 
-document.addEventListener('keydown', (event) => {
+input.addEventListener('input', () => {
 
-    // Do not allow paste using Ctrl+V or Cmd+V
-    if (
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === 'v'
-    ) {
-
-        event.preventDefault();
-
+    if (timer <= 0) {
         return;
     }
 
 
-    // Prevent cut, copy and select-all shortcuts
-    if (
-        (event.ctrlKey || event.metaKey) &&
-        ['c', 'x', 'a'].includes(event.key.toLowerCase())
-    ) {
-
-        event.preventDefault();
-
-        return;
-    }
+    const newValue = input.value;
 
 
-    // Ignore keys when the result screen is displayed
-    if (!paragraph || timer <= 0) {
-        return;
-    }
-
-
-    // Ignore keyboard shortcuts
-    if (
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey
-    ) {
-        return;
-    }
-
-
-    // Backspace
-    if (event.key === 'Backspace') {
-
-        event.preventDefault();
-
-        if (typedText.length > 0) {
-            typedText = typedText.slice(0, -1);
-        }
-
-        render();
-
-        stats();
-
-        return;
-    }
-
-
-    // Ignore Enter
-    if (event.key === 'Enter') {
-
-        event.preventDefault();
-
-        return;
-    }
-
-
-    // Ignore Tab
-    if (event.key === 'Tab') {
-
-        event.preventDefault();
-
-        return;
-    }
-
-
-    // Only accept normal printable characters
-    if (event.key.length === 1) {
-
-        event.preventDefault();
-
-        // Start the timer on the first character
+    // Start timer when the first character is typed
+    if (!started && newValue.length > 0) {
         start();
+    }
 
 
-        // Add typed character
-        typedText += event.key;
+    typedText = newValue;
 
 
-        render();
+    render();
 
-        stats();
+    stats();
+});
+
+
+// ----------------------------------
+// BACKSPACE SUPPORT
+// ----------------------------------
+
+input.addEventListener('keydown', (event) => {
+
+    if (event.key === 'Enter') {
+        event.preventDefault();
+    }
+
+
+    // Block Ctrl+C, Ctrl+X and Ctrl+V
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        ['c', 'x', 'v'].includes(event.key.toLowerCase())
+    ) {
+        event.preventDefault();
     }
 });
 
 
 // ----------------------------------
-// PREVENT PASTE
+// BLOCK PASTE
 // ----------------------------------
 
-document.addEventListener('paste', (event) => {
-
-    event.preventDefault();
-
-    console.log('Paste is disabled during the typing test.');
-});
-
-
-// ----------------------------------
-// PREVENT DROP
-// ----------------------------------
-
-document.addEventListener('drop', (event) => {
+input.addEventListener('paste', (event) => {
 
     event.preventDefault();
 });
 
-document.addEventListener('dragover', (event) => {
+
+// ----------------------------------
+// BLOCK DROP
+// ----------------------------------
+
+input.addEventListener('drop', (event) => {
 
     event.preventDefault();
+});
+
+input.addEventListener('dragover', (event) => {
+
+    event.preventDefault();
+});
+
+
+// ----------------------------------
+// KEEP INPUT FOCUSED
+// ----------------------------------
+
+function focusInput() {
+
+    input.focus();
+}
+
+
+// Clicking the passage focuses the invisible input
+text.addEventListener('click', () => {
+
+    focusInput();
+});
+
+
+// Clicking anywhere in the container focuses typing
+container.addEventListener('click', () => {
+
+    focusInput();
 });
 
 
@@ -384,15 +351,13 @@ function showResults() {
     `;
 
 
-    const resultRestart =
-        document.getElementById('resultRestart');
+    document
+        .getElementById('resultRestart')
+        .addEventListener('click', () => {
 
+            window.location.reload();
 
-    resultRestart.addEventListener('click', () => {
-
-        window.location.reload();
-
-    });
+        });
 }
 
 
@@ -419,6 +384,8 @@ function setDuration(seconds) {
 
 
     createPassage();
+
+    focusInput();
 }
 
 

@@ -20,7 +20,6 @@
 
         <h1>Typing Test</h1>
 
-        <!-- Test statistics -->
         <div class="stats">
 
             <div>
@@ -41,7 +40,6 @@
         </div>
 
 
-        <!-- Test duration -->
         <div class="duration">
 
             <button onclick="setDuration(15)">
@@ -63,12 +61,23 @@
         </div>
 
 
-        <!-- Typing passage -->
+        <!-- Visible typing passage -->
         <div
             class="text"
             id="text"
+            tabindex="0"
         ></div>
 
+
+        <!-- Invisible input used only to capture keyboard -->
+        <input
+            id="input"
+            class="hidden-input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+        >
 
     </div>
 
