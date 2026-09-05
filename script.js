@@ -1,9 +1,7 @@
 const text = document.getElementById('text');
-const input = document.getElementById('input');
 const timeEl = document.getElementById('time');
 const wpmEl = document.getElementById('wpm');
 const accEl = document.getElementById('accuracy');
-const restart = document.getElementById('restart');
 const container = document.querySelector('.container');
 
 let stories = [];
@@ -14,7 +12,13 @@ let timer = duration;
 let started = false;
 let interval;
 
-// Words required for each duration
+let typedText = '';
+
+
+// ----------------------------------
+// WORD TARGETS
+// ----------------------------------
+
 const wordTargets = {
     15: 200,
     30: 400,
@@ -28,7 +32,9 @@ const wordTargets = {
 // ----------------------------------
 
 async function loadStories() {
+
     try {
+
         const response = await fetch('passages.json');
 
         if (!response.ok) {
@@ -42,6 +48,7 @@ async function loadStories() {
         createPassage();
 
     } catch (error) {
+
         console.error('Error loading stories:', error);
 
         text.textContent = 'Could not load typing passages.';
@@ -66,6 +73,7 @@ function createPassage() {
 
     let wordCount = 0;
 
+
     while (
         wordCount < targetWords &&
         usedIndexes.size < stories.length
@@ -75,9 +83,11 @@ function createPassage() {
             Math.random() * stories.length
         );
 
+
         if (usedIndexes.has(randomIndex)) {
             continue;
         }
+
 
         usedIndexes.add(randomIndex);
 
@@ -88,8 +98,10 @@ function createPassage() {
         wordCount += story.split(/\s+/).length;
     }
 
-    // One continuous passage
+
     paragraph = selectedStories.join(' ');
+
+    typedText = '';
 
     render();
 }
@@ -101,31 +113,31 @@ function createPassage() {
 
 function render() {
 
-    const val = input.value;
-
     text.innerHTML = '';
 
-    [...paragraph].forEach((ch, i) => {
+    for (let i = 0; i < paragraph.length; i++) {
 
         const span = document.createElement('span');
 
-        span.textContent = ch;
+        span.textContent = paragraph[i];
 
-        if (i < val.length) {
 
-            if (val[i] === ch) {
+        if (i < typedText.length) {
+
+            if (typedText[i] === paragraph[i]) {
                 span.className = 'correct';
             } else {
                 span.className = 'wrong';
             }
 
-        } else if (i === val.length) {
+        } else if (i === typedText.length) {
 
             span.className = 'current';
         }
 
+
         text.appendChild(span);
-    });
+    }
 }
 
 
@@ -135,31 +147,38 @@ function render() {
 
 function stats() {
 
-    const typed = input.value.length;
+    const typed = typedText.length;
 
     let correct = 0;
 
+
     for (let i = 0; i < typed; i++) {
 
-        if (input.value[i] === paragraph[i]) {
+        if (typedText[i] === paragraph[i]) {
             correct++;
         }
     }
+
 
     const elapsedSeconds = duration - timer;
 
     const minutes = elapsedSeconds / 60 || 1 / 60;
 
+
     const wpm = Math.round(
         (correct / 5) / minutes
     );
+
 
     const accuracy = typed
         ? Math.round((correct / typed) * 100)
         : 100;
 
+
     wpmEl.textContent = wpm;
+
     accEl.textContent = accuracy;
+
 
     return {
         wpm,
@@ -180,6 +199,7 @@ function start() {
 
     started = true;
 
+
     interval = setInterval(() => {
 
         timer--;
@@ -188,11 +208,10 @@ function start() {
 
         stats();
 
+
         if (timer <= 0) {
 
             clearInterval(interval);
-
-            input.disabled = true;
 
             showResults();
         }
@@ -202,12 +221,141 @@ function start() {
 
 
 // ----------------------------------
+// HANDLE KEYBOARD INPUT
+// ----------------------------------
+
+document.addEventListener('keydown', (event) => {
+
+    // Do not allow paste using Ctrl+V or Cmd+V
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'v'
+    ) {
+
+        event.preventDefault();
+
+        return;
+    }
+
+
+    // Prevent cut, copy and select-all shortcuts
+    if (
+        (event.ctrlKey || event.metaKey) &&
+        ['c', 'x', 'a'].includes(event.key.toLowerCase())
+    ) {
+
+        event.preventDefault();
+
+        return;
+    }
+
+
+    // Ignore keys when the result screen is displayed
+    if (!paragraph || timer <= 0) {
+        return;
+    }
+
+
+    // Ignore keyboard shortcuts
+    if (
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+    ) {
+        return;
+    }
+
+
+    // Backspace
+    if (event.key === 'Backspace') {
+
+        event.preventDefault();
+
+        if (typedText.length > 0) {
+            typedText = typedText.slice(0, -1);
+        }
+
+        render();
+
+        stats();
+
+        return;
+    }
+
+
+    // Ignore Enter
+    if (event.key === 'Enter') {
+
+        event.preventDefault();
+
+        return;
+    }
+
+
+    // Ignore Tab
+    if (event.key === 'Tab') {
+
+        event.preventDefault();
+
+        return;
+    }
+
+
+    // Only accept normal printable characters
+    if (event.key.length === 1) {
+
+        event.preventDefault();
+
+        // Start the timer on the first character
+        start();
+
+
+        // Add typed character
+        typedText += event.key;
+
+
+        render();
+
+        stats();
+    }
+});
+
+
+// ----------------------------------
+// PREVENT PASTE
+// ----------------------------------
+
+document.addEventListener('paste', (event) => {
+
+    event.preventDefault();
+
+    console.log('Paste is disabled during the typing test.');
+});
+
+
+// ----------------------------------
+// PREVENT DROP
+// ----------------------------------
+
+document.addEventListener('drop', (event) => {
+
+    event.preventDefault();
+});
+
+document.addEventListener('dragover', (event) => {
+
+    event.preventDefault();
+});
+
+
+// ----------------------------------
 // SHOW RESULTS
 // ----------------------------------
 
 function showResults() {
 
     const finalStats = stats();
+
 
     container.innerHTML = `
         <div class="results-screen">
@@ -235,57 +383,17 @@ function showResults() {
         </div>
     `;
 
+
     const resultRestart =
         document.getElementById('resultRestart');
 
+
     resultRestart.addEventListener('click', () => {
 
-        // Reload the page and return to the start page
         window.location.reload();
 
     });
 }
-
-
-// ----------------------------------
-// USER TYPING
-// ----------------------------------
-
-input.addEventListener('input', () => {
-
-    start();
-
-    render();
-
-    stats();
-});
-
-
-// ----------------------------------
-// ORIGINAL RESTART BUTTON
-// ----------------------------------
-
-restart.addEventListener('click', () => {
-
-    clearInterval(interval);
-
-    timer = duration;
-    started = false;
-
-    timeEl.textContent = duration;
-
-    input.disabled = false;
-
-    input.value = '';
-
-    wpmEl.textContent = '0';
-
-    accEl.textContent = '100';
-
-    createPassage();
-
-    input.focus();
-});
 
 
 // ----------------------------------
@@ -298,18 +406,24 @@ function setDuration(seconds) {
         return;
     }
 
+
     duration = seconds;
 
     timer = seconds;
 
     timeEl.textContent = timer;
 
+    wpmEl.textContent = '0';
+
+    accEl.textContent = '100';
+
+
     createPassage();
 }
 
 
 // ----------------------------------
-// LOAD DATASET
+// LOAD DATA
 // ----------------------------------
 
 loadStories();
