@@ -65,6 +65,8 @@ function createPassage() {
         return;
     }
 
+    console.time("createPassage");
+
     const targetWords = wordTargets[duration];
 
     const selectedStories = [];
@@ -97,7 +99,13 @@ function createPassage() {
 
     typedText = '';
 
+    console.timeEnd("createPassage");
+
+    console.time("render");
+
     render();
+
+    console.timeEnd("render");
 }
 
 
