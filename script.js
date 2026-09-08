@@ -6,7 +6,6 @@ const accEl = document.getElementById('accuracy');
 const restart = document.getElementById('restart');
 const container = document.querySelector('.container');
 
-let stories = [];
 let paragraph = '';
 
 let duration = 60;
@@ -17,17 +16,7 @@ let interval;
 
 let typedText = '';
 
-
-// ----------------------------------
-// API
-// ----------------------------------
-
 const API_URL = 'https://typing-speed-api.onrender.com';
-
-
-// ----------------------------------
-// WORD TARGETS
-// ----------------------------------
 
 const wordTargets = {
     15: 200,
@@ -37,115 +26,59 @@ const wordTargets = {
 };
 
 
-// ----------------------------------
-// LOAD STORIES FROM API
-// ----------------------------------
+async function loadPassage() {
 
-async function loadStories() {
     try {
 
-        // Request 20 random stories from the API
+        const targetWords =
+            wordTargets[duration];
+
         const response = await fetch(
-            `${API_URL}/stories?count=20`
+            `${API_URL}/passage?words=${targetWords}`
         );
 
         if (!response.ok) {
-            throw new Error('Could not load stories from API');
+            throw new Error(
+                'Could not load passage from API'
+            );
         }
 
-        stories = await response.json();
+        const data =
+            await response.json();
+
+        paragraph =
+            data.passage;
 
         console.log(
-            'Stories received from API:',
-            stories.length
+            'Passage received:',
+            data.wordCount,
+            'words'
         );
 
-        createPassage();
+        typedText = '';
+
+        text.scrollTop = 0;
+
+        render();
 
         focusInput();
 
     } catch (error) {
 
         console.error(
-            'Error loading stories:',
+            'Error loading passage:',
             error
         );
 
         text.textContent =
-            'Could not load typing passages.';
+            'Could not load typing passage.';
     }
 }
 
-
-// ----------------------------------
-// CREATE RANDOM PASSAGE
-// ----------------------------------
-
-function createPassage() {
-
-    if (stories.length === 0) {
-        return;
-    }
-
-    const targetWords = wordTargets[duration];
-
-    const selectedStories = [];
-    const usedIndexes = new Set();
-
-    let wordCount = 0;
-
-
-    while (
-        wordCount < targetWords &&
-        usedIndexes.size < stories.length
-    ) {
-
-        const randomIndex =
-            Math.floor(
-                Math.random() * stories.length
-            );
-
-
-        if (usedIndexes.has(randomIndex)) {
-            continue;
-        }
-
-
-        usedIndexes.add(randomIndex);
-
-
-        const story = stories[randomIndex];
-
-        selectedStories.push(story);
-
-        wordCount +=
-            story.split(/\s+/).length;
-    }
-
-
-    // Join stories into continuous text
-    paragraph =
-        selectedStories.join(' ');
-
-    typedText = '';
-
-
-    // Start passage from the top
-    text.scrollTop = 0;
-
-
-    render();
-}
-
-
-// ----------------------------------
-// DISPLAY PASSAGE
-// ----------------------------------
 
 function render() {
 
     text.innerHTML = '';
-
 
     for (
         let i = 0;
@@ -156,12 +89,9 @@ function render() {
         const span =
             document.createElement('span');
 
-
         span.textContent =
             paragraph[i];
 
-
-        // Already typed characters
         if (i < typedText.length) {
 
             if (
@@ -177,11 +107,8 @@ function render() {
                 span.className =
                     'wrong';
             }
-        }
 
-
-        // Current character
-        else if (
+        } else if (
             i === typedText.length &&
             !finished
         ) {
@@ -190,19 +117,12 @@ function render() {
                 'current';
         }
 
-
         text.appendChild(span);
     }
 
-
-    // Keep current character visible
     scrollToCurrentCharacter();
 }
 
-
-// ----------------------------------
-// AUTOMATIC SCROLL
-// ----------------------------------
 
 function scrollToCurrentCharacter() {
 
@@ -210,15 +130,12 @@ function scrollToCurrentCharacter() {
         return;
     }
 
-
     const currentCharacter =
         text.querySelector('.current');
-
 
     if (!currentCharacter) {
         return;
     }
-
 
     const textRect =
         text.getBoundingClientRect();
@@ -226,9 +143,6 @@ function scrollToCurrentCharacter() {
     const characterRect =
         currentCharacter.getBoundingClientRect();
 
-
-    // Current character is below
-    // the visible area
     if (
         characterRect.bottom >
         textRect.bottom
@@ -238,12 +152,8 @@ function scrollToCurrentCharacter() {
             characterRect.bottom -
             textRect.bottom +
             28;
-    }
 
-
-    // Current character is above
-    // the visible area
-    else if (
+    } else if (
         characterRect.top <
         textRect.top
     ) {
@@ -256,17 +166,12 @@ function scrollToCurrentCharacter() {
 }
 
 
-// ----------------------------------
-// CALCULATE STATS
-// ----------------------------------
-
 function stats() {
 
     const typed =
         typedText.length;
 
     let correct = 0;
-
 
     for (
         let i = 0;
@@ -283,20 +188,16 @@ function stats() {
         }
     }
 
-
     const elapsedSeconds =
         duration - timer;
 
-
     const minutes =
         elapsedSeconds / 60 || 1 / 60;
-
 
     const wpm =
         Math.round(
             (correct / 5) / minutes
         );
-
 
     const accuracy =
         typed
@@ -305,11 +206,11 @@ function stats() {
             )
             : 100;
 
+    wpmEl.textContent =
+        wpm;
 
-    wpmEl.textContent = wpm;
-
-    accEl.textContent = accuracy;
-
+    accEl.textContent =
+        accuracy;
 
     return {
         wpm,
@@ -318,19 +219,16 @@ function stats() {
 }
 
 
-// ----------------------------------
-// START TIMER
-// ----------------------------------
-
 function start() {
 
-    if (started || finished) {
+    if (
+        started ||
+        finished
+    ) {
         return;
     }
 
-
     started = true;
-
 
     interval =
         setInterval(() => {
@@ -342,18 +240,16 @@ function start() {
 
             stats();
 
+            if (
+                timer <= 0
+            ) {
 
-            if (timer <= 0) {
                 finishTest();
             }
 
         }, 1000);
 }
 
-
-// ----------------------------------
-// HANDLE TYPING
-// ----------------------------------
 
 input.addEventListener(
     'input',
@@ -363,10 +259,8 @@ input.addEventListener(
             return;
         }
 
-
         const newValue =
             input.value;
-
 
         if (
             !started &&
@@ -376,10 +270,8 @@ input.addEventListener(
             start();
         }
 
-
         typedText =
             newValue;
-
 
         render();
 
@@ -387,10 +279,6 @@ input.addEventListener(
     }
 );
 
-
-// ----------------------------------
-// BLOCK COPY / CUT / PASTE
-// ----------------------------------
 
 input.addEventListener(
     'keydown',
@@ -412,7 +300,6 @@ input.addEventListener(
             event.preventDefault();
         }
 
-
         if (
             event.key === 'Enter' ||
             event.key === 'Tab'
@@ -427,6 +314,7 @@ input.addEventListener(
 input.addEventListener(
     'paste',
     (event) => {
+
         event.preventDefault();
     }
 );
@@ -435,6 +323,7 @@ input.addEventListener(
 input.addEventListener(
     'drop',
     (event) => {
+
         event.preventDefault();
     }
 );
@@ -443,14 +332,11 @@ input.addEventListener(
 input.addEventListener(
     'dragover',
     (event) => {
+
         event.preventDefault();
     }
 );
 
-
-// ----------------------------------
-// FOCUS INPUT
-// ----------------------------------
 
 function focusInput() {
 
@@ -460,16 +346,15 @@ function focusInput() {
 }
 
 
-// Click passage to focus input
 text.addEventListener(
     'click',
     () => {
+
         focusInput();
     }
 );
 
 
-// Click anywhere in container
 container.addEventListener(
     'click',
     (event) => {
@@ -478,6 +363,7 @@ container.addEventListener(
             event.target.tagName ===
             'BUTTON'
         ) {
+
             return;
         }
 
@@ -486,59 +372,45 @@ container.addEventListener(
 );
 
 
-// ----------------------------------
-// FINISH TEST
-// ----------------------------------
-
 function finishTest() {
 
     if (finished) {
         return;
     }
 
-
     finished = true;
-
 
     clearInterval(interval);
 
-
     input.disabled = true;
-
 
     const finalStats =
         stats();
 
+    text.style.display =
+        'none';
 
-    // Hide typing elements
-    text.style.display = 'none';
+    input.style.display =
+        'none';
 
-    input.style.display = 'none';
-
-
-    // Hide duration buttons
     const durationButtons =
         document.querySelector(
             '.duration'
         );
 
-
     if (durationButtons) {
+
         durationButtons.style.display =
             'none';
     }
 
-
-    // Create results screen
     const resultsScreen =
         document.createElement(
             'div'
         );
 
-
     resultsScreen.className =
         'results-screen';
-
 
     resultsScreen.innerHTML = `
         <h1>Test Complete!</h1>
@@ -562,61 +434,48 @@ function finishTest() {
         </div>
     `;
 
-
     container.appendChild(
         resultsScreen
     );
 }
 
 
-// ----------------------------------
-// RESTART
-// ----------------------------------
-
 restart.addEventListener(
     'click',
     () => {
+
         window.location.reload();
     }
 );
 
 
-// ----------------------------------
-// CHANGE DURATION
-// ----------------------------------
-
 function setDuration(seconds) {
 
-    if (started || finished) {
+    if (
+        started ||
+        finished
+    ) {
+
         return;
     }
 
+    duration =
+        seconds;
 
-    duration = seconds;
-
-    timer = seconds;
-
+    timer =
+        seconds;
 
     timeEl.textContent =
         timer;
 
-
     wpmEl.textContent =
         '0';
-
 
     accEl.textContent =
         '100';
 
-
-    createPassage();
-
-    focusInput();
+    loadPassage();
 }
 
 
-// ----------------------------------
-// LOAD DATA
-// ----------------------------------
-
-loadStories();
+loadPassage();
