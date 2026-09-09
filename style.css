@@ -6,9 +6,11 @@ body {
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
     color: #ffffff;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     min-height: 100vh;
     margin: 0;
     padding: 20px;
@@ -16,87 +18,152 @@ body {
 
 .container {
     width: min(850px, 95%);
+
     background: rgba(31, 41, 55, 0.95);
+
     padding: 32px;
+
     border-radius: 18px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.35);
+
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 h1 {
     text-align: center;
+
     margin: 0 0 24px;
+
     font-size: 32px;
+
     letter-spacing: 0.5px;
 }
+
+
+/* =========================
+   STATISTICS
+   ========================= */
 
 .stats {
     display: flex;
     justify-content: center;
+
     gap: 18px;
+
     margin: 20px 0;
+
     flex-wrap: wrap;
 }
 
 .stats div {
     background: #111827;
+
     padding: 12px 20px;
+
     border-radius: 10px;
+
     min-width: 110px;
+
     text-align: center;
+
     border: 1px solid #374151;
+
+    transition: 0.2s ease;
+}
+
+.stats div:hover {
+    border-color: #4b5563;
+
+    transform: translateY(-2px);
 }
 
 .stats strong {
     display: block;
+
     font-size: 13px;
+
     color: #9ca3af;
+
     margin-bottom: 5px;
 }
 
 .stats span {
     font-size: 22px;
+
     font-weight: bold;
 }
+
+
+/* =========================
+   DURATION BUTTONS
+   ========================= */
 
 .duration {
     display: flex;
     justify-content: center;
+
     gap: 10px;
+
     flex-wrap: wrap;
+
     margin: 20px 0;
 }
 
 .duration button {
     margin-top: 0;
+
     padding: 9px 16px;
+
     border: 1px solid #4b5563;
+
     background: #374151;
+
     color: white;
+
     border-radius: 8px;
+
     cursor: pointer;
+
     transition: 0.2s ease;
 }
 
 .duration button:hover {
     background: #4b5563;
+
     transform: translateY(-1px);
 }
 
+.duration button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================
+   TYPING TEXT
+   ========================= */
+
 .text {
     font-size: 22px;
+
     line-height: 28px;
 
     /* Exactly four lines */
     height: 112px;
+
     overflow: hidden;
 
     background: #111827;
+
     padding: 14px 18px;
+
     border-radius: 12px;
 
     border: 1px solid #374151;
-    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+
+    box-shadow:
+        inset 0 0 15px rgba(0, 0, 0, 0.15);
 
     word-wrap: break-word;
 }
@@ -107,70 +174,246 @@ h1 {
 
 .wrong {
     color: #ef4444;
+
     text-decoration: underline;
 }
 
 .current {
     text-decoration: underline;
+
     text-decoration-thickness: 2px;
+
     text-underline-offset: 4px;
 }
 
+
+/* =========================
+   HIDDEN INPUT
+   ========================= */
+
 input {
     width: 100%;
+
     padding: 14px 16px;
+
     margin-top: 18px;
 
     font-size: 18px;
+
     color: white;
+
     background: #111827;
 
     border: 1px solid #374151;
+
     border-radius: 10px;
 
     outline: none;
+
     transition: 0.2s ease;
 }
 
 input:focus {
     border-color: #60a5fa;
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+
+    box-shadow:
+        0 0 0 3px rgba(96, 165, 250, 0.15);
 }
 
 input:disabled {
     opacity: 0.6;
+
     cursor: not-allowed;
 }
 
+.hidden-input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    border: none;
+    outline: none;
+}
+
+
+/* =========================
+   RESTART BUTTON
+   ========================= */
+
 #restart {
     display: block;
+
     margin: 18px auto 0;
 
     padding: 11px 22px;
 
     font-size: 16px;
+
     font-weight: bold;
 
     color: white;
+
     background: #2563eb;
 
     border: none;
+
     border-radius: 9px;
 
     cursor: pointer;
+
     transition: 0.2s ease;
 }
 
 #restart:hover {
     background: #1d4ed8;
+
     transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 15px rgba(37, 99, 235, 0.25);
 }
 
 #restart:active {
     transform: translateY(0);
+
+    box-shadow: none;
 }
 
+
+/* =========================
+   RESULTS SCREEN
+   ========================= */
+
+.results-screen {
+    margin-top: 10px;
+
+    width: 100%;
+
+    text-align: center;
+
+    animation: resultsAppear 0.4s ease;
+}
+
+.results-screen h1 {
+    margin-bottom: 24px;
+
+    font-size: 30px;
+}
+
+
+/* =========================
+   RESULT CARD
+   ========================= */
+
+.results-card {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 20px;
+
+    margin-bottom: 28px;
+
+    flex-wrap: wrap;
+}
+
+.result-item {
+    min-width: 150px;
+
+    padding: 18px 25px;
+
+    background: #111827;
+
+    border: 1px solid #374151;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.2);
+
+    transition: 0.2s ease;
+}
+
+.result-item:hover {
+    border-color: #4b5563;
+
+    transform: translateY(-2px);
+}
+
+.result-item span {
+    display: block;
+
+    color: #9ca3af;
+
+    font-size: 14px;
+
+    margin-bottom: 8px;
+}
+
+.result-item strong {
+    display: block;
+
+    font-size: 28px;
+
+    color: #ffffff;
+}
+
+
+/* =========================
+   PERFORMANCE GRAPH
+   ========================= */
+
+#performanceChart {
+    display: block;
+
+    width: 100%;
+
+    height: 350px;
+
+    margin: 10px auto 0;
+
+    background: #111827;
+
+    border: 1px solid #374151;
+
+    border-radius: 14px;
+
+    box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.18),
+        0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================
+   RESULT ANIMATION
+   ========================= */
+
+@keyframes resultsAppear {
+    from {
+        opacity: 0;
+
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
 @media (max-width: 600px) {
+
     .container {
         padding: 20px;
     }
@@ -181,7 +424,9 @@ input:disabled {
 
     .text {
         font-size: 18px;
+
         line-height: 25px;
+
         height: 100px;
     }
 
@@ -195,19 +440,31 @@ input:disabled {
 
     .stats div {
         min-width: 90px;
+
         padding: 10px;
     }
-}
-.hidden-input {
-    position: absolute;
 
-    width: 1px;
-    height: 1px;
+    .results-screen h1 {
+        font-size: 26px;
+    }
 
-    opacity: 0;
+    .results-card {
+        gap: 10px;
+    }
 
-    pointer-events: none;
+    .result-item {
+        min-width: 120px;
 
-    border: none;
-    outline: none;
+        padding: 15px 18px;
+    }
+
+    .result-item strong {
+        font-size: 24px;
+    }
+
+    #performanceChart {
+        height: 300px;
+
+        margin-top: 5px;
+    }
 }

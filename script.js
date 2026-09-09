@@ -5,6 +5,8 @@ const wpmEl = document.getElementById('wpm');
 const accEl = document.getElementById('accuracy');
 const restart = document.getElementById('restart');
 const container = document.querySelector('.container');
+const performanceChart =
+    document.getElementById('performanceChart');
 
 let paragraph = '';
 
@@ -16,7 +18,8 @@ let interval;
 
 let typedText = '';
 
-const API_URL = 'https://typing-speed-api.onrender.com';
+const API_URL =
+    'https://typing-speed-api.onrender.com';
 
 const wordTargets = {
     15: 200,
@@ -24,6 +27,18 @@ const wordTargets = {
     60: 600,
     120: 900
 };
+
+
+// WPM measurements
+let performanceData = [];
+
+
+// Exact times when mistakes were made
+let errorData = [];
+
+
+// Time when the test actually started
+let testStartTime = 0;
 
 
 async function loadPassage() {
@@ -38,6 +53,7 @@ async function loadPassage() {
         );
 
         if (!response.ok) {
+
             throw new Error(
                 'Could not load passage from API'
             );
@@ -56,6 +72,10 @@ async function loadPassage() {
         );
 
         typedText = '';
+
+        performanceData = [];
+
+        errorData = [];
 
         text.scrollTop = 0;
 
@@ -214,8 +234,61 @@ function stats() {
 
     return {
         wpm,
-        accuracy
+        accuracy,
+        correct,
+        typed
     };
+}
+
+
+function recordPerformance() {
+
+    if (
+        !started ||
+        finished
+    ) {
+
+        return;
+    }
+
+    const currentStats =
+        stats();
+
+    const elapsedSeconds =
+        (
+            Date.now() -
+            testStartTime
+        ) / 1000;
+
+    performanceData.push({
+        time: elapsedSeconds,
+        wpm: currentStats.wpm
+    });
+}
+
+
+function recordError() {
+
+    if (
+        !started ||
+        finished
+    ) {
+
+        return;
+    }
+
+    const currentStats =
+        stats();
+
+    const elapsedSeconds =
+        (
+            Date.now() -
+            testStartTime
+        ) / 1000;
+
+    errorData.push({
+        time: elapsedSeconds
+    });
 }
 
 
@@ -225,10 +298,14 @@ function start() {
         started ||
         finished
     ) {
+
         return;
     }
 
     started = true;
+
+    testStartTime =
+        Date.now();
 
     interval =
         setInterval(() => {
@@ -239,6 +316,8 @@ function start() {
                 timer;
 
             stats();
+
+            recordPerformance();
 
             if (
                 timer <= 0
@@ -269,6 +348,31 @@ input.addEventListener(
 
             start();
         }
+
+
+        /*
+         * Check whether the newly typed
+         * character is incorrect.
+         */
+
+        if (
+            newValue.length >
+            typedText.length
+        ) {
+
+            const index =
+                newValue.length - 1;
+
+            if (
+                index < paragraph.length &&
+                newValue[index] !==
+                paragraph[index]
+            ) {
+
+                recordError();
+            }
+        }
+
 
         typedText =
             newValue;
@@ -372,6 +476,513 @@ container.addEventListener(
 );
 
 
+/*
+ * Find the WPM value on the blue
+ * performance curve at a specific time.
+ *
+ * This uses linear interpolation between
+ * the two closest performance points.
+ */
+
+function getWpmAtTime(time) {
+
+    if (
+        performanceData.length === 0
+    ) {
+
+        return 0;
+    }
+
+
+    if (
+        time <=
+        performanceData[0].time
+    ) {
+
+        return performanceData[0].wpm;
+    }
+
+
+    const lastPoint =
+        performanceData[
+            performanceData.length - 1
+        ];
+
+    if (
+        time >= lastPoint.time
+    ) {
+
+        return lastPoint.wpm;
+    }
+
+
+    for (
+        let i = 0;
+        i < performanceData.length - 1;
+        i++
+    ) {
+
+        const point1 =
+            performanceData[i];
+
+        const point2 =
+            performanceData[i + 1];
+
+
+        if (
+            time >= point1.time &&
+            time <= point2.time
+        ) {
+
+            const timeDifference =
+                point2.time -
+                point1.time;
+
+            const position =
+                timeDifference === 0
+                    ? 0
+                    : (
+                        time -
+                        point1.time
+                    ) /
+                    timeDifference;
+
+
+            return (
+                point1.wpm +
+                (
+                    point2.wpm -
+                    point1.wpm
+                ) *
+                position
+            );
+        }
+    }
+
+
+    return lastPoint.wpm;
+}
+
+
+function drawPerformanceChart() {
+
+    const canvas =
+        performanceChart;
+
+    const ctx =
+        canvas.getContext('2d');
+
+    const width =
+        canvas.clientWidth;
+
+    const height =
+        350;
+
+    const devicePixelRatio =
+        window.devicePixelRatio || 1;
+
+    canvas.width =
+        width * devicePixelRatio;
+
+    canvas.height =
+        height * devicePixelRatio;
+
+    canvas.style.height =
+        `${height}px`;
+
+    ctx.scale(
+        devicePixelRatio,
+        devicePixelRatio
+    );
+
+    ctx.clearRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    if (
+        performanceData.length === 0
+    ) {
+
+        return;
+    }
+
+
+    const padding = {
+        top: 50,
+        right: 30,
+        bottom: 50,
+        left: 55
+    };
+
+
+    const graphWidth =
+        width -
+        padding.left -
+        padding.right;
+
+    const graphHeight =
+        height -
+        padding.top -
+        padding.bottom;
+
+
+    const maxWpm =
+        Math.max(
+            10,
+            ...performanceData.map(
+                point => point.wpm
+            )
+        );
+
+
+    const maxValue =
+        Math.ceil(
+            maxWpm / 10
+        ) * 10;
+
+
+    function xPosition(time) {
+
+        return (
+            padding.left +
+            (
+                time / duration
+            ) *
+            graphWidth
+        );
+    }
+
+
+    function yPosition(wpm) {
+
+        return (
+            padding.top +
+            graphHeight -
+            (
+                wpm / maxValue
+            ) *
+            graphHeight
+        );
+    }
+
+
+    // Background
+
+    ctx.fillStyle =
+        '#111827';
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    // Grid
+
+    ctx.strokeStyle =
+        '#374151';
+
+    ctx.lineWidth = 1;
+
+    const gridLines = 5;
+
+    for (
+        let i = 0;
+        i <= gridLines;
+        i++
+    ) {
+
+        const y =
+            padding.top +
+            (
+                i / gridLines
+            ) *
+            graphHeight;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            padding.left,
+            y
+        );
+
+        ctx.lineTo(
+            width - padding.right,
+            y
+        );
+
+        ctx.stroke();
+    }
+
+
+    // Axes
+
+    ctx.strokeStyle =
+        '#9ca3af';
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        padding.left,
+        padding.top
+    );
+
+    ctx.lineTo(
+        padding.left,
+        height - padding.bottom
+    );
+
+    ctx.lineTo(
+        width - padding.right,
+        height - padding.bottom
+    );
+
+    ctx.stroke();
+
+
+    // Title
+
+    ctx.fillStyle =
+        '#ffffff';
+
+    ctx.font =
+        'bold 18px Arial';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.fillText(
+        'Typing Speed',
+        width / 2,
+        25
+    );
+
+
+    // X-axis label
+
+    ctx.font =
+        '14px Arial';
+
+    ctx.fillText(
+        'Time (seconds)',
+        width / 2,
+        height - 12
+    );
+
+
+    // Y-axis label
+
+    ctx.save();
+
+    ctx.translate(
+        16,
+        height / 2
+    );
+
+    ctx.rotate(
+        -Math.PI / 2
+    );
+
+    ctx.fillText(
+        'WPM',
+        0,
+        0
+    );
+
+    ctx.restore();
+
+
+    // X-axis values
+
+    ctx.textAlign =
+        'center';
+
+    ctx.fillStyle =
+        '#d1d5db';
+
+    ctx.font =
+        '12px Arial';
+
+    for (
+        let i = 0;
+        i <= 5;
+        i++
+    ) {
+
+        const time =
+            Math.round(
+                (duration / 5) * i
+            );
+
+        const x =
+            xPosition(time);
+
+        ctx.fillText(
+            time,
+            x,
+            height - 32
+        );
+    }
+
+
+    // Y-axis values
+
+    ctx.textAlign =
+        'right';
+
+    for (
+        let i = 0;
+        i <= 5;
+        i++
+    ) {
+
+        const value =
+            Math.round(
+                (maxValue / 5) *
+                (5 - i)
+            );
+
+        const y =
+            padding.top +
+            (
+                i / 5
+            ) *
+            graphHeight;
+
+        ctx.fillText(
+            value,
+            padding.left - 8,
+            y + 4
+        );
+    }
+
+
+    /*
+     * Draw WPM line
+     */
+
+    ctx.strokeStyle =
+        '#60a5fa';
+
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+
+    performanceData.forEach(
+        (point, index) => {
+
+            const x =
+                xPosition(
+                    point.time
+                );
+
+            const y =
+                yPosition(
+                    point.wpm
+                );
+
+            if (
+                index === 0
+            ) {
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            } else {
+
+                ctx.lineTo(
+                    x,
+                    y
+                );
+            }
+        }
+    );
+
+    ctx.stroke();
+
+
+    /*
+     * Draw mistake dots.
+     *
+     * IMPORTANT:
+     * Instead of using a separately
+     * calculated WPM value, we get
+     * the exact WPM position from
+     * the blue line itself.
+     */
+
+    ctx.fillStyle =
+        '#ef4444';
+
+    errorData.forEach(
+        error => {
+
+            const wpm =
+                getWpmAtTime(
+                    error.time
+                );
+
+            const x =
+                xPosition(
+                    error.time
+                );
+
+            const y =
+                yPosition(
+                    wpm
+                );
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                3,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+    );
+
+
+    // Legend
+
+    ctx.textAlign =
+        'left';
+
+    ctx.font =
+        '13px Arial';
+
+    ctx.fillStyle =
+        '#60a5fa';
+
+    ctx.fillText(
+        '— WPM',
+        padding.left,
+        45
+    );
+
+    ctx.fillStyle =
+        '#ef4444';
+
+    ctx.fillText(
+        '● Mistake',
+        padding.left + 70,
+        45
+    );
+}
+
+
 function finishTest() {
 
     if (finished) {
@@ -384,14 +995,27 @@ function finishTest() {
 
     input.disabled = true;
 
+
     const finalStats =
         stats();
 
-    text.style.display =
-        'none';
 
-    input.style.display =
-        'none';
+    console.log(
+        'Performance data:',
+        performanceData
+    );
+
+    console.log(
+        'Error data:',
+        errorData
+    );
+
+
+    text.style.display = 'none';
+    input.style.display = 'none';
+
+   document.querySelector('.stats').style.display = 'none';
+
 
     const durationButtons =
         document.querySelector(
@@ -404,6 +1028,7 @@ function finishTest() {
             'none';
     }
 
+
     const resultsScreen =
         document.createElement(
             'div'
@@ -411,6 +1036,7 @@ function finishTest() {
 
     resultsScreen.className =
         'results-screen';
+
 
     resultsScreen.innerHTML = `
         <h1>Test Complete!</h1>
@@ -434,9 +1060,22 @@ function finishTest() {
         </div>
     `;
 
+
     container.appendChild(
         resultsScreen
     );
+
+
+    resultsScreen.appendChild(
+        performanceChart
+    );
+
+
+    performanceChart.style.display =
+        'block';
+
+
+    drawPerformanceChart();
 }
 
 
@@ -476,6 +1115,10 @@ function setDuration(seconds) {
 
     loadPassage();
 }
+
+
+performanceChart.style.display =
+    'none';
 
 
 loadPassage();
